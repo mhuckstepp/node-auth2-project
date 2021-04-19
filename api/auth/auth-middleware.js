@@ -11,6 +11,15 @@ const restricted = (req, res, next) => {
     res.status(401).json({
       message: "Token required",
     });
+  } else {
+    jwt.verify(token, "slkdslkdm", (err, decoded) => {
+      if (decoded) {
+        req.body.decodedTok = decoded;
+        next();
+      } else {
+        res.status(401).json({ message: err });
+      }
+    });
   }
 
   // else { jwt.verify( token )  }
@@ -25,6 +34,12 @@ const restricted = (req, res, next) => {
 };
 
 const only = (role_name) => (req, res, next) => {
+  if (req.body.decodedTok.role_name !== role_name) {
+    res.status(401).json({ message: "this is not for you" });
+  } else {
+    next();
+  }
+
   /*
     If the user does not provide a token in the Authorization header with a role_name
     inside its payload matching the role_name passed to this function as its argument:
@@ -42,10 +57,10 @@ const checkUsernameExists = (req, res, next) => {
   findBy({ username: username })
     .then((user) => {
       if (user) {
-        req.body.founduser = user;
+        req.body.foundUser = user;
         next();
       } else {
-        res.status(404).json({ message: "Invalid credentials" });
+        res.status(401).json({ message: "Invalid credentials" });
       }
     })
     .catch(next);
@@ -59,16 +74,14 @@ const checkUsernameExists = (req, res, next) => {
 };
 
 const validateRoleName = (req, res, next) => {
-  const role = req.body.role_name.trim();
-
-  if (!role) {
+  if (!req.body.role_name) {
     req.body.role_name = "student";
     next();
-  } else if (role === "admin") {
+  } else if (req.body.role_name === "admin") {
     res.status(422).json({
       message: "Role name can not be admin",
     });
-  } else if (role.length > 32) {
+  } else if (req.body.role_name.length > 32) {
     res
       .status(422)
       .json({ message: "Role name can not be longer than 32 chars" });
