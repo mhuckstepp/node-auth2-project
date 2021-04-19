@@ -17,7 +17,7 @@ const restricted = (req, res, next) => {
         req.body.decodedTok = decoded;
         next();
       } else {
-        res.status(401).json({ message: err });
+        res.status(401).json({ message: "token invalid" });
       }
     });
   }
@@ -35,7 +35,7 @@ const restricted = (req, res, next) => {
 
 const only = (role_name) => (req, res, next) => {
   if (req.body.decodedTok.role_name !== role_name) {
-    res.status(401).json({ message: "this is not for you" });
+    res.status(403).json({ message: "this is not for you" });
   } else {
     next();
   }
@@ -77,15 +77,16 @@ const validateRoleName = (req, res, next) => {
   if (!req.body.role_name) {
     req.body.role_name = "student";
     next();
-  } else if (req.body.role_name === "admin") {
+  } else if (req.body.role_name.trim() === "admin") {
     res.status(422).json({
       message: "Role name can not be admin",
     });
-  } else if (req.body.role_name.length > 32) {
+  } else if (req.body.role_name.trim().length > 32) {
     res
       .status(422)
       .json({ message: "Role name can not be longer than 32 chars" });
   } else {
+    req.body.role_name = req.body.role_name.trim();
     next();
   }
 };
